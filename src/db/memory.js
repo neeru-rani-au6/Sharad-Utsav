@@ -2,8 +2,8 @@ import { CATALOG, PROMO_TYPE } from '@/domain/constants';
 import { randomUUID } from 'crypto';
 
 /**
- * In-process store for local demo when DATABASE_URL is not set.
- * NOT safe across Vercel serverless instances — production must use Neon.
+ * In-process store for local demo when MONGODB_URI is not set.
+ * NOT safe across Vercel serverless instances — production must use MongoDB.
  */
 function initialStock() {
   const stock = {};
@@ -86,6 +86,11 @@ export async function memoryGetPromo(code) {
 
 export async function memoryGetBooking(id) {
   return getStore().bookings.get(id) || null;
+}
+
+export async function memoryListBookings() {
+  const list = Array.from(getStore().bookings.values());
+  return list.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
 }
 
 export async function memoryFindByIdempotency(key) {

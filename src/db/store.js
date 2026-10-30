@@ -1,34 +1,38 @@
 import * as memory from './memory.js';
-import * as neon from './neon.js';
+import * as mongo from './mongo.js';
 
-function hasDatabaseUrl() {
-  return Boolean(process.env.DATABASE_URL);
+function hasMongo() {
+  return Boolean(process.env.MONGODB_URI);
 }
 
 export function storageMode() {
-  return hasDatabaseUrl() ? 'neon' : 'memory';
+  return hasMongo() ? 'mongo' : 'memory';
 }
 
 export async function getStockMap() {
-  return hasDatabaseUrl() ? neon.neonGetStockMap() : memory.memoryGetStockMap();
+  return hasMongo() ? mongo.mongoGetStockMap() : memory.memoryGetStockMap();
 }
 
 export async function getPromo(code) {
-  return hasDatabaseUrl() ? neon.neonGetPromo(code) : memory.memoryGetPromo(code);
+  return hasMongo() ? mongo.mongoGetPromo(code) : memory.memoryGetPromo(code);
 }
 
 export async function getBooking(id) {
-  return hasDatabaseUrl() ? neon.neonGetBooking(id) : memory.memoryGetBooking(id);
+  return hasMongo() ? mongo.mongoGetBooking(id) : memory.memoryGetBooking(id);
+}
+
+export async function listBookings() {
+  return hasMongo() ? mongo.mongoListBookings() : memory.memoryListBookings();
 }
 
 export async function findByIdempotency(key) {
-  return hasDatabaseUrl()
-    ? neon.neonFindByIdempotency(key)
+  return hasMongo()
+    ? mongo.mongoFindByIdempotency(key)
     : memory.memoryFindByIdempotency(key);
 }
 
 export async function createBooking(payload) {
-  return hasDatabaseUrl()
-    ? neon.neonCreateBooking(payload)
+  return hasMongo()
+    ? mongo.mongoCreateBooking(payload)
     : memory.memoryCreateBooking(payload);
 }

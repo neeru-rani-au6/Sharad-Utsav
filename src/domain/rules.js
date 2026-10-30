@@ -179,76 +179,132 @@ export function validateBooker(booker) {
   return errors;
 }
 
+/** Build labeled slots so the UI can show Adult 1 / Child 1 clearly. */
+export function buildAttendeeTemplate(cart) {
+  const need = requiredAttendees(cart);
+  const slots = [];
+  for (let i = 0; i < need.adults; i += 1) {
+    slots.push({
+      role: AGE_BAND.ADULT,
+      label: `Adult ${i + 1}`,
+      hint: 'Age 12 or older',
+    });
+  }
+  for (let i = 0; i < need.children; i += 1) {
+    slots.push({
+      role: AGE_BAND.CHILD,
+      label: `Child ${i + 1}`,
+      hint: 'Age 5 to 11',
+    });
+  }
+  return { need, slots };
+}
+
 export function validateAttendees(attendees, cart) {
   const errors = [];
-  const need = requiredAttendees(cart);
+  const { need, slots: template } = buildAttendeeTemplate(cart);
   const list = Array.isArray(attendees) ? attendees : [];
 
-  const ticketed = list.filter((a) => {
-    const p = parseAge(a?.age);
-    return p.ok && p.band !== AGE_BAND.TODDLER;
+  const ticketedPeople = list.filter((a) => a?.role !== 'TODDLER' && !a?.isToddler);
+  const toddlers = list.filter((a) => a?.role === 'TODDLER' || a?.isToddler);
+
+  // Validate each required ticketed slot by position (adults first, then children).
+  let adultCount = 0;
+  let childCount = 0;
+  let filledTicketed = 0;
+
+  template.forEach((slot, index) => {
+    const person = ticketedPeople[index];
+    const label = slot.label;
+
+    if (!person) {
+      errors.push(err('attendees', `${label} is missing — add their name and age (${slot.hint.toLowerCase()}).`));
+      return;
+    }
+
+    const hasName = Boolean(String(person.name || '').trim());
+    const ageCheck = parseAge(person.age);
+
+    if (!hasName && !ageCheck.ok) {
+      errors.push(
+        err('attendees', `${label} is empty — enter a name and age (${slot.hint.toLowerCase()}).`),
+      );
+      return;
+    }
+    if (!hasName) {
+      errors.push(err('attendees', `${label}: please enter a name.`));
+    }
+    if (!ageCheck.ok) {
+      errors.push(err('attendees', `${label}: ${ageCheck.message}`));
+      return;
+    }
+
+    if (ageCheck.band === AGE_BAND.TODDLER) {
+      errors.push(
+        err(
+          'attendees',
+          `${label}: age ${ageCheck.age} is under 5 (free toddler). Use “Add toddler” for them, and put a ticketed guest here instead.`,
+        ),
+      );
+      return;
+    }
+
+    filledTicketed += 1;
+    if (ageCheck.band === AGE_BAND.ADULT) adultCount += 1;
+    if (ageCheck.band === AGE_BAND.CHILD) childCount += 1;
+
+    if (slot.role === AGE_BAND.ADULT && ageCheck.band !== AGE_BAND.ADULT) {
+      errors.push(
+        err(
+          'attendees',
+          `${label} must be age 12+ (you entered ${ageCheck.age}). Children 5–11 go in the Child slots.`,
+        ),
+      );
+    }
+    if (slot.role === AGE_BAND.CHILD && ageCheck.band !== AGE_BAND.CHILD) {
+      errors.push(
+        err(
+          'attendees',
+          `${label} must be age 5–11 (you entered ${ageCheck.age}). Adults 12+ go in the Adult slots.`,
+        ),
+      );
+    }
   });
 
-  const toddlers = list.filter((a) => {
-    const p = parseAge(a?.age);
-    return p.ok && p.band === AGE_BAND.TODDLER;
-  });
-
-  // Toddlers are optional extras for the door list; ticketed people must match.
-  if (ticketed.length !== need.total) {
+  // Extra non-toddler rows beyond template (should not happen, but guard).
+  if (ticketedPeople.length > template.length) {
     errors.push(
       err(
         'attendees',
-        `Please enter details for ${need.total} ticketed guest${need.total === 1 ? '' : 's'} (you have ${ticketed.length}). Toddlers under 5 are free and do not need a ticket.`,
+        `Too many ticketed guests — this booking only needs ${need.total} (${need.adults} adult${need.adults === 1 ? '' : 's'}, ${need.children} child${need.children === 1 ? '' : 'ren'}).`,
       ),
     );
   }
 
-  let adultCount = 0;
-  let childCount = 0;
-
-  list.forEach((person, index) => {
-    const prefix = `attendees[${index}]`;
+  toddlers.forEach((person, i) => {
+    const label = `Toddler ${i + 1}`;
     if (!String(person?.name || '').trim()) {
-      errors.push(err(`${prefix}.name`, 'Please enter a name.'));
+      errors.push(err('attendees', `${label}: please enter a name.`));
     }
     const ageCheck = parseAge(person?.age);
     if (!ageCheck.ok) {
-      errors.push(err(`${prefix}.age`, ageCheck.message));
-      return;
-    }
-    if (ageCheck.band === AGE_BAND.ADULT) adultCount += 1;
-    if (ageCheck.band === AGE_BAND.CHILD) childCount += 1;
-    if (ageCheck.band === AGE_BAND.TODDLER) {
-      // toddlers ok — no phone needed
-      return;
-    }
-    if (ageCheck.band === AGE_BAND.ADULT) {
-      // phone optional for adult attendees
+      errors.push(err('attendees', `${label}: ${ageCheck.message}`));
+    } else if (ageCheck.band !== AGE_BAND.TODDLER) {
+      errors.push(err('attendees', `${label} must be under 5 (you entered ${ageCheck.age}).`));
     }
   });
 
-  if (ticketed.length === need.total) {
-    if (adultCount !== need.adults) {
-      errors.push(
-        err(
-          'attendees',
-          `This booking covers ${need.adults} adult${need.adults === 1 ? '' : 's'} (age 12+), but you listed ${adultCount}.`,
-        ),
-      );
-    }
-    if (childCount !== need.children) {
-      errors.push(
-        err(
-          'attendees',
-          `This booking covers ${need.children} child${need.children === 1 ? '' : 'ren'} (ages 5–11), but you listed ${childCount}.`,
-        ),
-      );
-    }
+  if (
+    errors.length === 0 &&
+    (filledTicketed !== need.total || adultCount !== need.adults || childCount !== need.children)
+  ) {
+    errors.push(
+      err(
+        'attendees',
+        `Please enter ${need.adults} adult${need.adults === 1 ? '' : 's'} (12+) and ${need.children} child${need.children === 1 ? '' : 'ren'} (5–11). Right now: ${adultCount} adult${adultCount === 1 ? '' : 's'}, ${childCount} child${childCount === 1 ? '' : 'ren'}.`,
+      ),
+    );
   }
-
-  // Soft note: toddlers don't affect counts beyond being listed
-  void toddlers;
 
   return errors;
 }

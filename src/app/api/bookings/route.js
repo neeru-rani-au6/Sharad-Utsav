@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
-import { createBooking, getPromo, getStockMap } from '@/db/store';
+import { createBooking, getPromo, getStockMap, listBookings } from '@/db/store';
 import { CATALOG } from '@/domain/constants';
 import { stockDemand } from '@/domain/pricing';
 import { validateBooking } from '@/domain/rules';
 
 export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  const bookings = await listBookings();
+  return NextResponse.json({
+    ok: true,
+    bookings: bookings.map(publicBooking),
+  });
+}
 
 export async function POST(request) {
   let body;

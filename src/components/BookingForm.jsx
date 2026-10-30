@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CATALOG, FESTIVAL_DAYS } from '@/domain/constants';
 import { quoteCart } from '@/domain/pricing';
-import { requiredAttendees } from '@/domain/rules';
+import { AGE_BAND } from '@/domain/constants';
+import { buildAttendeeTemplate } from '@/domain/rules';
 import { newIdempotencyKey } from '@/lib/format';
 import StepTickets from './StepTickets';
 import StepExtras from './StepExtras';
@@ -25,23 +26,51 @@ function upsertLine(list, kind, day, qty) {
 }
 
 function makeAttendeeSlots(cart, previous) {
-  const need = requiredAttendees(cart);
-  const toddlers = (previous || []).filter((p) => p.isToddler);
-  const ticketed = (previous || []).filter((p) => !p.isToddler);
+  const { slots: template } = buildAttendeeTemplate(cart);
+  const prevList = previous || [];
+  const prevAdults = prevList.filter((p) => p.role === AGE_BAND.ADULT);
+  const prevChildren = prevList.filter((p) => p.role === AGE_BAND.CHILD);
+  const prevOther = prevList.filter(
+    (p) => !p.isToddler && p.role !== 'TODDLER' && p.role !== AGE_BAND.ADULT && p.role !== AGE_BAND.CHILD,
+  );
+  const toddlers = prevList.filter((p) => p.isToddler || p.role === 'TODDLER');
 
-  const slots = [];
-  for (let i = 0; i < need.total; i += 1) {
-    const prev = ticketed[i];
-    slots.push({
-      key: prev?.key || `g-${i}-${need.total}`,
+  let adultI = 0;
+  let childI = 0;
+  let otherI = 0;
+
+  const slots = template.map((slot, i) => {
+    let prev;
+    if (slot.role === AGE_BAND.ADULT) {
+      prev = prevAdults[adultI] || prevOther[otherI];
+      if (prevAdults[adultI]) adultI += 1;
+      else if (prev) otherI += 1;
+    } else {
+      prev = prevChildren[childI] || prevOther[otherI];
+      if (prevChildren[childI]) childI += 1;
+      else if (prev) otherI += 1;
+    }
+    return {
+      key: prev?.key || `${slot.role}-${i}`,
       name: prev?.name || '',
       age: prev?.age || '',
       phone: prev?.phone || '',
+      role: slot.role,
+      label: slot.label,
+      hint: slot.hint,
+      slotIndex: i,
       isToddler: false,
-    });
-  }
+    };
+  });
+
   for (const t of toddlers) {
-    slots.push(t);
+    slots.push({
+      ...t,
+      role: 'TODDLER',
+      label: t.label || 'Toddler (free)',
+      hint: 'Under 5 — free, no ticket',
+      isToddler: true,
+    });
   }
   return slots;
 }
@@ -222,6 +251,22 @@ export default function BookingForm() {
               list.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
             );
           }}
+          onCopyBookerToFirstAdult={() => {
+            setAttendees((list) => {
+              const idx = list.findIndex((p) => p.role === AGE_BAND.ADULT);
+              if (idx < 0) return list;
+              return list.map((p, i) =>
+                i === idx
+                  ? {
+                      ...p,
+                      name: booker.name || p.name,
+                      age: booker.age || p.age,
+                      phone: booker.phone || p.phone,
+                    }
+                  : p,
+              );
+            });
+          }}
           onAddToddler={() => {
             setAttendees((list) => [
               ...list,
@@ -230,6 +275,9 @@ export default function BookingForm() {
                 name: '',
                 age: '3',
                 phone: '',
+                role: 'TODDLER',
+                label: 'Toddler (free)',
+                hint: 'Under 5 — free, no ticket',
                 isToddler: true,
               },
             ]);
@@ -279,8 +327,8 @@ export default function BookingForm() {
 
       {catalog?.storageMode === 'memory' ? (
         <p className="hint" style={{ marginTop: '1rem' }}>
-          Running with in-memory stock (no DATABASE_URL). Fine for local demo; use Neon
-          on Vercel so stock survives.
+          Running with in-memory stock (no MONGODB_URI). Fine for local demo; use
+          MongoDB on Vercel so stock survives.
         </p>
       ) : null}
     </div>

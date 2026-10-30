@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { formatCents } from '@/domain/money';
 import { dayLabel } from '@/lib/format';
 
@@ -50,6 +51,15 @@ export default function StepDone({ booking }) {
         A confirmation email would normally go to {booking.booker.email}. (Email
         sending is out of scope for this exercise.)
       </p>
+
+      <div className="actions">
+        <Link className="btn" href="/bookings">
+          View all bookings
+        </Link>
+        <Link className="btn btn-primary" href="/">
+          Book again
+        </Link>
+      </div>
     </div>
   );
 }

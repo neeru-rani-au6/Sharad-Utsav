@@ -10,7 +10,7 @@ The **server** calculates price, checks age rules, applies promos, and decrement
 
 - Next.js 15 (App Router) · JavaScript · plain CSS
 - Domain logic in `src/domain/` (pure functions)
-- Neon Postgres when `DATABASE_URL` is set; in-memory store for local demo only
+- **MongoDB** when `MONGODB_URI` is set; in-memory store for local demo only
 - Vitest for pricing and age tests
 
 ## Run locally
@@ -21,12 +21,12 @@ pnpm dev              # http://localhost:3000
 pnpm test
 ```
 
-Without `DATABASE_URL`, stock lives in memory for the Node process (fine for `pnpm dev`, not for Vercel).
+Without `MONGODB_URI`, stock lives in memory for the Node process (fine for `pnpm dev`, not for Vercel).
 
-### With Neon (required for production)
+### With MongoDB (required for production)
 
-1. Create a free database at [neon.tech](https://neon.tech)
-2. Copy `.env.example` → `.env.local` and set `DATABASE_URL`
+1. Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (or run MongoDB locally)
+2. Copy `.env.example` → `.env.local` and set `MONGODB_URI`
 3. Seed stock and promo codes:
 
 ```bash
@@ -37,9 +37,10 @@ pnpm db:seed
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | Neon Postgres connection string. Stock and bookings persist across serverless invocations. |
+| `MONGODB_URI` | MongoDB connection string. Stock and bookings persist across serverless invocations. |
+| `MONGODB_DB` | Optional database name (default: `sharad_utsav`) |
 
-Set it under Project → Settings → Environment Variables for Production, then redeploy. Run the seed SQL once against that database (`pnpm db:seed` with the same URL).
+Set `MONGODB_URI` under Project → Settings → Environment Variables for Production, then redeploy. Run `pnpm db:seed` once against that database.
 
 ## API contract
 
@@ -79,6 +80,10 @@ Same cart/people/promo as quote, plus:
 - `400` — validation errors  
 - `409` — stock conflict  
 
+### `GET /api/bookings`
+
+Lists recent bookings (newest first) for the door / volunteer view at `/bookings`.
+
 ### `GET /api/bookings/:id`
 
 Confirmation payload for the success screen.
@@ -102,14 +107,14 @@ Confirmation payload for the success screen.
 5. **KIDSFREE** — only zeros `DAY_CHILD` / `ALLDAY_CHILD` lines, not the family flat rate.
 6. **One promo at a time**; blank promo = no discount.
 7. **Simulated payment** with idempotency key to stop double-book on double-click.
-8. **In-memory fallback** only when `DATABASE_URL` is missing — production must use Neon.
+8. **MongoDB** for durable stock (not SQL) — conditional `$inc` with `remaining >= qty` so two buyers cannot take the last workshop seat. In-memory fallback only when `MONGODB_URI` is missing.
 9. **Plain JS + CSS** — kept components small and rules out of the UI for the live interview rule-change.
 
 ## Unfinished / out of scope
 
 - Real Stripe / email confirmation
 - Admin restock UI
-- Full Postgres transaction wrapping (stock uses conditional `UPDATE … WHERE remaining >= qty`; a rare failure after decrement could desync — noted for a production follow-up)
+- Multi-document Mongo transactions (stock uses per-SKU conditional updates + rollback on failure — good enough for this exercise)
 - Multi-festival rule engine (would extract catalog + `rules.js` plugins)
 
 ## Design note

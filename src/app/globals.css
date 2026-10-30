@@ -87,6 +87,44 @@ p {
   margin: 0;
 }
 
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.site-nav a {
+  color: var(--cream);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+}
+
+.site-nav a:hover {
+  border-color: var(--bright-gold);
+  color: var(--white);
+}
+
+.site-nav a[aria-current='page'] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--heading);
+}
+
+a.btn {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+
+.card.light a.btn:not(.btn-primary) {
+  color: var(--heading);
+}
+
 .steps {
   display: flex;
   gap: 0.35rem;
@@ -348,6 +386,19 @@ p {
   color: var(--heading);
 }
 
+/* Outline buttons on cream panels need dark text (cream-on-cream is unreadable). */
+.card.light .btn:not(.btn-primary) {
+  color: var(--heading);
+  background: #fff;
+  border-color: var(--gold);
+}
+
+.card.light .btn:not(.btn-primary):hover:not(:disabled) {
+  color: var(--heading);
+  background: rgba(201, 155, 36, 0.15);
+  border-color: var(--bright-gold);
+}
+
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -402,6 +453,39 @@ p {
   padding: 0.85rem;
   margin-bottom: 0.75rem;
   background: rgba(255, 255, 255, 0.55);
+}
+
+.guest-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.guest-checklist span {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(41, 25, 0, 0.2);
+  background: #fff;
+  color: var(--heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.guest-checklist span.ok {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.error-list .error {
+  margin: 0.35rem 0;
 }
 
 .muted {
