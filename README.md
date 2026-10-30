@@ -1,6 +1,6 @@
 # Sharad Utsav 2026 — Festival booking
 
-**Live URL:**  https://sharad-utsav-enciqfocb-my-self-c7d9.vercel.app/bookings
+**Live URL:** https://sharad-utsav-enciqfocb-my-self-c7d9.vercel.app
 
 Mobile-friendly booking flow for Sharad Utsav 2026 at Radha Krishna Temple, Allen, Texas. Families pick tickets and extras, enter guests, apply a promo, pay (simulated), and get a confirmation.
 
