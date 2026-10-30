@@ -18,6 +18,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "eslint": "^9",
     "eslint-config-next": "^15.5.0",
     "vitest": "^3.0.0"
