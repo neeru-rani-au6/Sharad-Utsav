@@ -327,8 +327,10 @@ export default function BookingForm() {
 
       {catalog?.storageMode === 'memory' ? (
         <p className="hint" style={{ marginTop: '1rem' }}>
-          Running with in-memory stock (no MONGODB_URI). Fine for local demo; use
-          MongoDB on Vercel so stock survives.
+          Running with in-memory stock — <code>MONGODB_URI</code> is not set on this
+          server. On Vercel: Project → Settings → Environment Variables → add{' '}
+          <code>MONGODB_URI</code> (Production), then Redeploy. Seed with{' '}
+          <code>pnpm db:seed</code>.
         </p>
       ) : null}
     </div>

@@ -40,7 +40,16 @@ pnpm db:seed
 | `MONGODB_URI` | MongoDB connection string. Stock and bookings persist across serverless invocations. |
 | `MONGODB_DB` | Optional database name (default: `sharad_utsav`) |
 
-Set `MONGODB_URI` under Project → Settings → Environment Variables for Production, then redeploy. Run `pnpm db:seed` once against that database.
+**Important:** your local `.env` is gitignored and is **not** uploaded to Vercel. You must copy the same values into the Vercel dashboard:
+
+1. Vercel → your project → **Settings** → **Environment Variables**
+2. Add `MONGODB_URI` = your Atlas connection string (same as local `.env`)
+3. Optionally add `MONGODB_DB` = `sharad_utsav`
+4. Enable for **Production** (and Preview if you want)
+5. **Redeploy** the project (env vars only apply to new deployments)
+6. Seed once from your laptop: `MONGODB_URI="..." pnpm db:seed`
+
+If the site still says “in-memory stock”, the live deploy cannot see `MONGODB_URI` — check the name spelling and that you redeployed after saving it.
 
 ## API contract
 

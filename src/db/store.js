@@ -2,7 +2,8 @@ import * as memory from './memory.js';
 import * as mongo from './mongo.js';
 
 function hasMongo() {
-  return Boolean(process.env.MONGODB_URI);
+  const uri = String(process.env.MONGODB_URI || '').trim();
+  return uri.length > 0;
 }
 
 export function storageMode() {
