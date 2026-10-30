@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap');
+
 :root {
   --primary-dark: #2c2c2c;
   --primary: #c99b24;
@@ -11,8 +13,8 @@
   --error: #ef1f1f;
   --card-bg: rgba(255, 255, 255, 0.05);
   --card-border: rgba(255, 255, 255, 0.2);
-  --font-serif: var(--font-serif-loaded), 'Georgia', serif;
-  --font-sans: var(--font-sans-loaded), 'Segoe UI', sans-serif;
+  --font-serif: 'Libre Baskerville', Georgia, serif;
+  --font-sans: 'Source Sans 3', 'Segoe UI', sans-serif;
 }
 
 * {
